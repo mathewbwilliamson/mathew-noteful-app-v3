@@ -8,27 +8,33 @@ const Note = require('../models/note');
 ////////////////////////////////////////////////////////////////
 //Find using a filter and searchTerm
 ////////////////////////////////////////////////////////////////
-// mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
-//   .then(() => {
-//     const searchTerm = 'lady gaga';
-//     let filter = {};
+mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
+  .then(() => {
+    const searchTerm = 'odio';
+    let re;
 
-//     if (searchTerm) {
-//       filter.title = { $regex: searchTerm, $options: 'gi' };
-//     }
+    if (searchTerm) {
+      //filter.title = { $regex: searchTerm, $options: 'gi' };
+      re = new RegExp(searchTerm, 'gi');
+    }
 
-//     return Note.find(filter).sort({ updatedAt: 'desc' });
-//   })
-//   .then(results => {
-//     console.log(results);
-//   })
-//   .then(() => {
-//     return mongoose.disconnect()
-//   })
-//   .catch(err => {
-//     console.error(`ERROR: ${err.message}`);
-//     console.error(err);
-//   });
+    return Note.find({
+      $or: [
+        {title: re},
+        {content:re}
+      ]
+    }).sort({ updatedAt: 'desc' });
+  })
+  .then(results => {
+    console.log(results);
+  })
+  .then(() => {
+    return mongoose.disconnect()
+  })
+  .catch(err => {
+    console.error(`ERROR: ${err.message}`);
+    console.error(err);
+  });
 
 ////////////////////////////////////////////////////////////////
 //FindbyId
@@ -104,19 +110,19 @@ const Note = require('../models/note');
 ////////////////////////////////////////////////////////////////
 //Delete a note by id using Note.findByIdAndRemove
 ////////////////////////////////////////////////////////////////
-mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
-  .then(() => {
-    const searchId = '000000000000000000000004';
+// mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
+//   .then(() => {
+//     const searchId = '000000000000000000000004';
 
-    return Note.findByIdAndRemove(searchId);
-  })
-  .then( () => {
-    console.log('Status should be 204');
-  })
-  .then(() => {
-    return mongoose.disconnect()
-  })
-  .catch(err => {
-    console.error(`ERROR: ${err.message}`);
-    console.error(err);
-  });
+//     return Note.findByIdAndRemove(searchId);
+//   })
+//   .then( () => {
+//     console.log('Status should be 204');
+//   })
+//   .then(() => {
+//     return mongoose.disconnect()
+//   })
+//   .catch(err => {
+//     console.error(`ERROR: ${err.message}`);
+//     console.error(err);
+//   });
