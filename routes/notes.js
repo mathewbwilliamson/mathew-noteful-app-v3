@@ -71,8 +71,20 @@ router.get('/:id', (req, res, next) => {
 /* ========== POST/CREATE AN ITEM ========== */
 //DONE
 router.post('/', (req, res, next) => {
-  const inputObj = req.body;
-  //TODO: Go through old version to check their code
+  const { title, content } = req.body;
+
+  /***** Never trust users. Validate input *****/
+  if (!title) {
+    const err = new Error('Missing `title` in request body');
+    err.status = 400;
+    return next(err);
+  }
+
+  const inputObj = {
+    title: title,
+    content: content
+  };
+
   Note.create(inputObj)
     .then(results => {
       res.json( results );
@@ -84,18 +96,47 @@ router.post('/', (req, res, next) => {
 });
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
+//DONE
 router.put('/:id', (req, res, next) => {
+  const searchId = req.params.id;
+  const { title, content } = req.body;
 
-  console.log('Update a Note');
-  res.json({ id: 1, title: 'Updated Temp 1' });
+  /***** Never trust users. Validate input *****/
+  if (!title) {
+    const err = new Error('Missing `title` in request body');
+    err.status = 400;
+    return next(err);
+  }
+
+  const inputObj = {
+    title: title,
+    content: content
+  };
+  
+  Note.findByIdAndUpdate(searchId, inputObj, {new:true})
+    .then( results => {
+      res.json( results );
+    })
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({ message: 'Internal server error' });
+    })
+  
 
 });
 
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/:id', (req, res, next) => {
+  const searchId = req.params.id;
 
-  console.log('Delete a Note');
-  res.status(204).end();
+  Note.findByIdAndRemove(searchId)
+    .then( results => {
+      res.status(204).end();
+    })
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({ message: 'Internal server error' });
+    })
 });
 
 module.exports = router;
