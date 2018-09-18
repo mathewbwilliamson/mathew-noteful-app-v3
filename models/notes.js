@@ -8,3 +8,5 @@ const noteSchema = new mongoose.Schema({
 });
 
 noteSchema.set('timestamps', true);
+
+module.exports = mongoose.model('Note', noteSchema);
