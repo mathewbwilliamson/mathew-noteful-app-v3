@@ -48,7 +48,7 @@ router.get('/:id', (req, res, next) => {
       console.error(err);
       res.status(500).json({ message: 'Internal server error' });
     })
-})
+});
 
 /* ================ POST A FOLDER =========================== */
 router.post('/', (req, res, next) => {
@@ -75,8 +75,38 @@ router.post('/', (req, res, next) => {
         err.status = 400;        
       }
       next(err);
-    })
-})
+    });
+});
 
+/* ================ POST A FOLDER =========================== */
+router.put('/:id', (req, res, next) => {
+  const { name } = req.body;
+  console.log(req.body)
+  const searchId = req.params.id;
+
+  /***** Never trust users. Validate input *****/
+  if (!name) {
+    const err = new Error('Missing `name` in request body');
+    err.status = 400;
+    return next(err);
+  }
+
+  const inputObj = {
+    name: name
+  };
+
+  Folder
+    .findByIdAndUpdate(searchId, inputObj, {new:true})
+    .then( results => {
+      res.location(`${req.originalUrl}/${results.id}`).status(201).json( results );
+    })
+    .catch(err => {
+      if (err.code === 11000) {
+        err = new Error('The folder name already exists');
+        err.status = 400;        
+      }
+      next(err);
+    });
+})
 
 module.exports = router;
