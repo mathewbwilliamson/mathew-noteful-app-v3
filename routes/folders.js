@@ -18,8 +18,9 @@ app.use(express.json());
 
 /* ================ GET/READ ALL FOLDERS ================ */
 router.get('/', (req, res, next) => {
-  console.log('in folders/get')
-  Folder.find().sort({'name': 'asc'})
+  Folder
+    .find()
+    .sort({'name': 'asc'})
     .then( results => {
       res.json( results );
     })
@@ -28,5 +29,25 @@ router.get('/', (req, res, next) => {
       res.status(500).json({ message: 'Internal server error' });
     });
 });
+
+/* ================ GET/READ A SINGLE FOLDER ================ */
+router.get('/:id', (req, res, next) => {
+  const searchId = req.params.id;
+
+  Folder
+    .findById(searchId)
+    .then(results => {
+      if (results) {
+        res.json(results);
+      } else {
+        res.status(404);
+        next();
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({ message: 'Internal server error' });
+    })
+})
 
 module.exports = router;
