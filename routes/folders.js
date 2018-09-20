@@ -67,12 +67,16 @@ router.post('/', (req, res, next) => {
   Folder
     .create(inputObj)
     .then( results => {
-      res.json( results );
+      res.location(`${req.originalUrl}/${results.id}`).status(201).json( results );
     })
     .catch(err => {
-      console.error(err);
-      res.status(500).json({ message: 'Internal server error'});
+      if (err.code === 11000) {
+        err = new Error('The folder name already exists');
+        err.status = 400;        
+      }
+      next(err);
     })
 })
+
 
 module.exports = router;

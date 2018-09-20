@@ -115,7 +115,7 @@ router.put('/:id', (req, res, next) => {
   
   Note.findByIdAndUpdate(searchId, inputObj, {new:true})
     .then( results => {
-      res.json( results );
+      res.location(`${req.originalUrl}/${results.id}`).status(201).json( results );
     })
     .catch(err => {
       console.error(err);
