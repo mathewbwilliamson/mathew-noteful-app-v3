@@ -47,7 +47,7 @@ router.get('/:id', (req, res, next) => {
     .catch(err => {
       console.error(err);
       res.status(500).json({ message: 'Internal server error' });
-    })
+    });
 });
 
 /* ================ POST A FOLDER =========================== */
@@ -81,7 +81,7 @@ router.post('/', (req, res, next) => {
 /* ================ POST A FOLDER =========================== */
 router.put('/:id', (req, res, next) => {
   const { name } = req.body;
-  console.log(req.body)
+  console.log(req.body);
   const searchId = req.params.id;
 
   /***** Never trust users. Validate input *****/
@@ -107,6 +107,31 @@ router.put('/:id', (req, res, next) => {
       }
       next(err);
     });
-})
+});
+
+/* ========== DELETE/REMOVE A SINGLE FOLDER ========== */
+//Also should remove all the related notes
+router.delete('/:id', (req, res, next) => {
+  const searchId = req.params.id;
+
+  /***** Never trust users - validate input *****/
+  if (!mongoose.Types.ObjectId.isValid(searchId)) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
+  const folderRemovePromise = Folder.findByIdAndRemove( searchId );
+  const noteRemovePromise = Note.deleteMany({ folderId: searchId});
+
+  Promise.all([folderRemovePromise, noteRemovePromise])
+    .then( () => {
+      res.status(204).end();
+    })
+    .catch(err => {
+      next(err);
+    })
+  
+});
 
 module.exports = router;
