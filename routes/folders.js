@@ -50,4 +50,29 @@ router.get('/:id', (req, res, next) => {
     })
 })
 
+/* ================ POST A FOLDER =========================== */
+router.post('/', (req, res, next) => {
+  const { name } = req.body;
+
+  if (!name) {
+    const err = new Error('Missing `name` in request body');
+    err.status = 400;
+    return next(err);
+  }
+
+  const inputObj = {
+    name: name
+  };
+
+  Folder
+    .create(inputObj)
+    .then( results => {
+      res.json( results );
+    })
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({ message: 'Internal server error'});
+    })
+})
+
 module.exports = router;
