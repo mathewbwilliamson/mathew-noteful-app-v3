@@ -122,7 +122,15 @@ router.delete('/:id', (req, res, next) => {
   }
 
   const folderRemovePromise = Folder.findByIdAndRemove( searchId );
-  const noteRemovePromise = Note.deleteMany({ folderId: searchId});
+
+  //On DELETE SET CASCADE functionality
+  //const noteRemovePromise = Note.deleteMany({ folderId: searchId});
+
+  //ON DELETE SET NULL functionality
+  const noteRemovePromise = Note.updateMany(
+    {folderId: searchId},
+    {$unset: {folderId:1}}
+  )
 
   Promise.all([folderRemovePromise, noteRemovePromise])
     .then( () => {
