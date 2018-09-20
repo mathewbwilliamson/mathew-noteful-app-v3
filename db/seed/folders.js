@@ -17,4 +17,4 @@ const folders = [
   }
 ]
 
-module.exports = mongoose.model('Note', noteSchema);
+module.exports = { folders };
