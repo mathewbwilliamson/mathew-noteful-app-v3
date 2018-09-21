@@ -9,12 +9,9 @@ mongoose.Promise = global.Promise;
 
 // config.js is where we control constants for entire
 // app like PORT and DATABASE_URL
-//const { PORT, MONGODB_URI } = require('../config');
 const Note = require('../models/note');
 
 const router = express.Router();
-//const app = express();
-//app.use(express.json());
 
 /* ========== GET/READ ALL ITEMS ========== */  
 router.get('/', (req, res, next) => {
@@ -32,32 +29,32 @@ router.get('/', (req, res, next) => {
       ]
     };
   }
-  console.log(searchObj)
+
   if (folderId) {
     searchObj.folderId = folderId;
   }
 
-  console.log(searchObj)
-
   Note
     .find(searchObj)
     .sort({ updatedAt: 'desc' })
+    .populate('folderId')
     .then(results => {
       res.json( results );
     })
     .catch(err => {
       console.error(err);
       res.status(500).json({ message: 'Internal server error' });
-    })
-
-
+    });
 });
 
 /* ========== GET/READ A SINGLE ITEM ========== */
 router.get('/:id', (req, res, next) => {
   const searchId = req.params.id;
 
-  Note.findById(searchId).sort({ updatedAt: 'desc' })
+  Note
+    .findById(searchId)
+    .sort({ updatedAt: 'desc' })
+    .populate('folderId')
     .then(results => {
       if (results) {
         res.json(results);
@@ -76,7 +73,7 @@ router.get('/:id', (req, res, next) => {
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
-  const { title, content } = req.body;
+  const { title, content, folderId } = req.body;
 
   /***** Never trust users. Validate input *****/
   if (!title) {
@@ -87,7 +84,8 @@ router.post('/', (req, res, next) => {
 
   const inputObj = {
     title: title,
-    content: content
+    content: content,
+    folderId: folderId
   };
 
   Note.create(inputObj)
