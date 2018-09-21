@@ -8,13 +8,13 @@ mongoose.Promise = global.Promise;
 
 // config.js is where we control constants for entire
 // app like PORT and DATABASE_URL
-const { PORT, MONGODB_URI } = require('../config');
+//const { PORT, MONGODB_URI } = require('../config');
 const Note = require('../models/note');
 const Folder = require('../models/folder');
 
 const router = express.Router();
-const app = express();
-app.use(express.json());
+//const app = express();
+//app.use(express.json());
 
 /* ================ GET/READ ALL FOLDERS ================ */
 router.get('/', (req, res, next) => {
@@ -33,6 +33,12 @@ router.get('/', (req, res, next) => {
 /* ================ GET/READ A SINGLE FOLDER ================ */
 router.get('/:id', (req, res, next) => {
   const searchId = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(searchId)) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
 
   Folder
     .findById(searchId)
@@ -60,12 +66,12 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
-  const inputObj = {
+  const newFolder = {
     name: name
   };
 
   Folder
-    .create(inputObj)
+    .create(newFolder)
     .then( results => {
       res.location(`${req.originalUrl}/${results.id}`).status(201).json( results );
     })
@@ -78,25 +84,30 @@ router.post('/', (req, res, next) => {
     });
 });
 
-/* ================ POST A FOLDER =========================== */
+/* ================ UPDATE A FOLDER =========================== */
 router.put('/:id', (req, res, next) => {
   const { name } = req.body;
-  console.log(req.body);
   const searchId = req.params.id;
 
   /***** Never trust users. Validate input *****/
+  if (!mongoose.Types.ObjectId.isValid(searchId)) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+  
   if (!name) {
     const err = new Error('Missing `name` in request body');
     err.status = 400;
     return next(err);
   }
 
-  const inputObj = {
+  const updateFolder = {
     name: name
   };
 
   Folder
-    .findByIdAndUpdate(searchId, inputObj, {new:true})
+    .findByIdAndUpdate(searchId, updateFolder, {new:true})
     .then( results => {
       res.location(`${req.originalUrl}/${results.id}`).status(201).json( results );
     })
@@ -130,7 +141,7 @@ router.delete('/:id', (req, res, next) => {
   const noteRemovePromise = Note.updateMany(
     {folderId: searchId},
     {$unset: {folderId:1}}
-  )
+  );
 
   Promise.all([folderRemovePromise, noteRemovePromise])
     .then( () => {

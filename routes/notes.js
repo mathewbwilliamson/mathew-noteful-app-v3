@@ -9,15 +9,14 @@ mongoose.Promise = global.Promise;
 
 // config.js is where we control constants for entire
 // app like PORT and DATABASE_URL
-const { PORT, MONGODB_URI } = require('../config');
+//const { PORT, MONGODB_URI } = require('../config');
 const Note = require('../models/note');
 
 const router = express.Router();
-const app = express();
-app.use(express.json());
+//const app = express();
+//app.use(express.json());
 
-/* ========== GET/READ ALL ITEMS ========== */
-//DONE  
+/* ========== GET/READ ALL ITEMS ========== */  
 router.get('/', (req, res, next) => {
   const searchTerm = req.query.searchTerm;
   let re = '';
@@ -47,7 +46,6 @@ router.get('/', (req, res, next) => {
 });
 
 /* ========== GET/READ A SINGLE ITEM ========== */
-//DONE
 router.get('/:id', (req, res, next) => {
   const searchId = req.params.id;
 

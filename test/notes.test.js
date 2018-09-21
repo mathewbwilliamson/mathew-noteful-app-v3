@@ -8,8 +8,9 @@ const app = require('../server');
 const { TEST_MONGODB_URI } = require('../config');
 
 const Note = require('../models/note');
+const Folder = require('../models/folder');
 
-const { notes } = require('../db/seed/notes');
+const { folders, notes } = require('../db/seed/notes');
 
 const expect = chai.expect;
 chai.use(chaiHttp);
@@ -29,19 +30,23 @@ describe('Reality Check', () => {
 describe('All tests are here for Noteful API', () => {
 
   before(function () {
-    return mongoose.connect(TEST_MONGODB_URI)
+    console.log('Starting up the connection DB for Notes');
+    return mongoose.connect(TEST_MONGODB_URI, { useNewUrlParser: true})
       .then(() => mongoose.connection.db.dropDatabase());
   });
 
   beforeEach(function () {
+    console.log('resetting test DB notes');
     return Note.insertMany(notes);
   });
 
   afterEach(function () {
+    console.log('Starting up the connection DB for Notes');
     return mongoose.connection.db.dropDatabase();
   });
 
   after(function () {
+    console.log('Disconnecting the server for Notes');
     return mongoose.disconnect();
   });
 
@@ -79,7 +84,7 @@ describe('All tests are here for Noteful API', () => {
           expect(res).to.be.json;
 
           expect(res.body).to.be.an('object');
-          expect(res.body).to.have.keys('id', 'title', 'content', 'createdAt', 'updatedAt');
+          expect(res.body).to.have.keys('id', 'folderId', 'title', 'content', 'createdAt', 'updatedAt');
 
           // 3) then compare database results to API response
           expect(res.body.id).to.equal(data.id);
