@@ -18,22 +18,30 @@ const router = express.Router();
 
 /* ========== GET/READ ALL ITEMS ========== */  
 router.get('/', (req, res, next) => {
-  const searchTerm = req.query.searchTerm;
-  let re = '';
-  let searchObj;
+  const { searchTerm, folderId } = req.query;
+  
+  let reSearch = '';
+  let searchObj = {};
 
   if (searchTerm) {
-    //filter.title = { $regex: searchTerm, $options: 'gi' };
-    re = new RegExp(searchTerm, 'gi');
+    reSearch = new RegExp(searchTerm, 'gi');
     searchObj = {
       $or: [
-        {title: re},
-        {content:re}
+        {title: reSearch},
+        {content: reSearch}
       ]
     };
   }
+  console.log(searchObj)
+  if (folderId) {
+    searchObj.folderId = folderId;
+  }
 
-  Note.find(searchObj).sort({ updatedAt: 'desc' })
+  console.log(searchObj)
+
+  Note
+    .find(searchObj)
+    .sort({ updatedAt: 'desc' })
     .then(results => {
       res.json( results );
     })
@@ -67,7 +75,6 @@ router.get('/:id', (req, res, next) => {
 });
 
 /* ========== POST/CREATE AN ITEM ========== */
-//DONE
 router.post('/', (req, res, next) => {
   const { title, content } = req.body;
 
