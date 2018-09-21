@@ -95,4 +95,87 @@ describe('All folder tests are here for Noteful API', () => {
       });
     });
   });
-})
+
+  describe('POST /api/folders', function() {
+    it('should create and return a new folder when provided valid data', function() {
+      const newItem = {
+        'name': 'Test Folder'
+      };
+      let res;
+      return chai.request(app)
+        .post('/api/folders')
+        .send(newItem)
+        .then(function(_res) {
+          res = _res;
+
+          expect(res).to.have.status(201);
+          expect(res).to.have.header('location');
+          expect(res).to.be.json;
+          expect(res.body).to.be.a('object');
+          expect(res.body).to.have.keys('name', 'id', 'createdAt', 'updatedAt');
+          return Folder.findById(res.body.id);
+        })
+        .then( data => {
+          expect(res.body.id).to.equal(data.id);
+          expect(res.body.title).to.equal(data.title);
+          expect(res.body.content).to.equal(data.content);
+          expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
+          expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
+        });
+    });
+  });
+
+  describe('PUT /api/folders', function() {
+    it('should update and return a new folder when provided valid data', function() {
+      const updateItem = {
+        'name': 'This folder name should not exist',
+      };
+
+      let res;
+      return Folder
+        .findOne()
+        .then(function(folder) {
+          updateItem.id = folder.id;
+          return chai.request(app)
+            .post('/api/folders')
+            .send(updateItem)
+            .then(function(_res) {
+              res = _res;
+      
+              expect(res).to.have.status(201);
+              expect(res).to.have.header('location');
+              expect(res).to.be.json;
+              expect(res.body).to.be.a('object');
+              expect(res.body).to.have.keys('id', 'name', 'createdAt', 'updatedAt');
+              return Folder.findById(res.body.id);
+            })
+            .then( data => {
+              expect(res.body.id).to.equal(data.id);
+              expect(res.body.title).to.equal(data.title);
+              expect(res.body.content).to.equal(data.content);
+              expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
+              expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
+            });
+        });
+    });
+  });
+
+  describe('DELETE /api/folders', function() {
+    it('should delete a folder by id', function() {
+      let folder;
+      return Folder
+        .findOne()
+        .then(function(_folder) {
+          folder = _folder;
+          return chai.request(app).delete(`/api/folders/${folder.id}`);
+        })
+        .then(function(res) {
+          expect(res).to.have.status(204);
+          return Folder.findById(folder.id);
+        })
+        .then( function(_folder) {
+          expect(_folder).to.be.null;
+        });
+    });
+  });
+});
