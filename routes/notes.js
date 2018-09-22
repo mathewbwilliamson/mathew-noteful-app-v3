@@ -15,11 +15,11 @@ const router = express.Router();
 
 /* ========== GET/READ ALL ITEMS ========== */  
 router.get('/', (req, res, next) => {
-  const { searchTerm, folderId } = req.query;
+  const { searchTerm, folderId, tagId } = req.query;
   
   let reSearch = '';
   let searchObj = {};
-
+  
   if (searchTerm) {
     reSearch = new RegExp(searchTerm, 'gi');
     searchObj = {
@@ -33,11 +33,16 @@ router.get('/', (req, res, next) => {
   if (folderId) {
     searchObj.folderId = folderId;
   }
+  //TODO: Get tagId to work
+  if (tagId) {
+    searchObj.tagId = tagId;
+  }
 
   Note
     .find(searchObj)
     .sort({ updatedAt: 'desc' })
     .populate('folderId')
+    .populate('tags')
     .then(results => {
       res.json( results );
     })
@@ -55,6 +60,7 @@ router.get('/:id', (req, res, next) => {
     .findById(searchId)
     .sort({ updatedAt: 'desc' })
     .populate('folderId')
+    .populate('tags')
     .then(results => {
       if (results) {
         res.json(results);
@@ -73,7 +79,7 @@ router.get('/:id', (req, res, next) => {
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
-  const { title, content, folderId } = req.body;
+  const { title, content, folderId, tags } = req.body;
 
   /***** Never trust users. Validate input *****/
   if (!title) {
@@ -82,10 +88,20 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
+  // need to validate tag ids
+  for (let tag of tags) {
+    if (!mongoose.Types.ObjectId.isValid(tag)) {
+      const err = new Error('The `tag id` is not valid');
+      err.status = 400;
+      return next(err);
+    }
+  }
+  
   const inputObj = {
     title: title,
     content: content,
-    folderId: folderId
+    folderId: folderId,
+    tags: tags
   };
 
   Note.create(inputObj)
@@ -99,7 +115,6 @@ router.post('/', (req, res, next) => {
 });
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
-//DONE
 router.put('/:id', (req, res, next) => {
   const searchId = req.params.id;
   const { title, content } = req.body;
