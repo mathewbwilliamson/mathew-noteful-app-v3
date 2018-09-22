@@ -117,7 +117,7 @@ router.post('/', (req, res, next) => {
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
 router.put('/:id', (req, res, next) => {
   const searchId = req.params.id;
-  const { title, content } = req.body;
+  const { title, content, folderId, tags } = req.body;
 
   /***** Never trust users. Validate input *****/
   if (!title) {
@@ -126,9 +126,20 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
+  // need to validate tag ids
+  for (let tag of tags) {
+    if (!mongoose.Types.ObjectId.isValid(tag)) {
+      const err = new Error('The `tag id` is not valid');
+      err.status = 400;
+      return next(err);
+    }
+  }
+
   const inputObj = {
     title: title,
-    content: content
+    content: content,
+    folderId: folderId,
+    tags: tags
   };
   
   Note.findByIdAndUpdate(searchId, inputObj, {new:true})
