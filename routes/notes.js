@@ -17,29 +17,27 @@ const router = express.Router();
 router.get('/', (req, res, next) => {
   const { searchTerm, folderId, tagId } = req.query;
   
-  let reSearch = '';
-  let searchObj = {};
-  
+  let filter = {};
+
   if (searchTerm) {
-    reSearch = new RegExp(searchTerm, 'gi');
-    searchObj = {
-      $or: [
-        {title: reSearch},
-        {content: reSearch}
-      ]
-    };
+    // Search the title for a term
+    // filter.title = { $regex: searchTerm, $options: 'i' };
+
+    // Mini-Challenge: Search both `title` and `content`
+    const re = new RegExp(searchTerm, 'i');
+    filter.$or = [{ 'title': re }, { 'content': re }];
   }
 
   if (folderId) {
-    searchObj.folderId = folderId;
+    filter.folderId = folderId;
   }
-  //TODO: Get tagId to work
+
   if (tagId) {
-    searchObj.tagId = tagId;
+    filter.tags = tagId;
   }
 
   Note
-    .find(searchObj)
+    .find(filter)
     .sort({ updatedAt: 'desc' })
     .populate('folderId')
     .populate('tags')
@@ -48,7 +46,7 @@ router.get('/', (req, res, next) => {
     })
     .catch(err => {
       console.error(err);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ message: 'Internal Server Error' });
     });
 });
 
@@ -70,16 +68,20 @@ router.get('/:id', (req, res, next) => {
       }
     })
     .catch(err => {
-      console.error(err);
-      res.status(500).json({ message: 'Internal server error' });
-    })
+      if (err.code === 11000) {
+        err = new Error('The `id` is not valid.');
+        err.status = 400;        
+      }
+      next(err);
+    });
   
 
 });
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
-  const { title, content, folderId, tags } = req.body;
+  const { title, content, tags } = req.body;
+  let { folderId } = req.body;
 
   /***** Never trust users. Validate input *****/
   if (!title) {
@@ -88,12 +90,24 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
+  if (folderId === '') {
+    folderId = null;
+  }
+
+  if (folderId && !mongoose.Types.ObjectId.isValid(folderId)) {
+    const err = new Error('The `folderId` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
   // need to validate tag ids
-  for (let tag of tags) {
-    if (!mongoose.Types.ObjectId.isValid(tag)) {
-      const err = new Error('The `tag id` is not valid');
-      err.status = 400;
-      return next(err);
+  if (tags) {
+    for (let tag of tags) {
+      if (!mongoose.Types.ObjectId.isValid(tag)) {
+        const err = new Error('The `tags` array contains an invalid `id`');
+        err.status = 400;
+        return next(err);
+      }
     }
   }
   
@@ -106,50 +120,68 @@ router.post('/', (req, res, next) => {
 
   Note.create(inputObj)
     .then(results => {
-      res.json( results );
+      res.location(`${req.originalUrl}/${results.id}`).status(201).json( results );
     })
     .catch(err => {
       console.error(err);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ message: 'Internal Server Error' });
     })
 });
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
 router.put('/:id', (req, res, next) => {
   const searchId = req.params.id;
-  const { title, content, folderId, tags } = req.body;
+  const { title, content, folderId } = req.body;
+  let { tags } = req.body;
+  let inputObj = {};
 
   /***** Never trust users. Validate input *****/
-  if (!title) {
-    const err = new Error('Missing `title` in request body');
+  if (title) {
+    inputObj.title = title;
+  } else if (!title) {
+    const err = new Error('The `title` may not be an empty string');
+    err.status = 400;
+    return next(err);
+  }
+  if (folderId && !mongoose.Types.ObjectId.isValid(folderId)) {
+    const err = new Error('The `folderId` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(searchId)) {
+    const err = new Error('The `id` is not valid');
     err.status = 400;
     return next(err);
   }
 
   // need to validate tag ids
-  for (let tag of tags) {
-    if (!mongoose.Types.ObjectId.isValid(tag)) {
-      const err = new Error('The `tag id` is not valid');
-      err.status = 400;
-      return next(err);
+  if (tags) {
+    for (let tag of tags) {
+      if (!mongoose.Types.ObjectId.isValid(tag)) {
+        const err = new Error('The `tag id` is not valid');
+        err.status = 400;
+        return next(err);
+      }
     }
+    inputObj.tags = tags;
   }
 
-  const inputObj = {
-    title: title,
-    content: content,
-    folderId: folderId,
-    tags: tags
-  };
-  
+  if (content) inputObj.content = content;
+  if (folderId) inputObj.folderId = folderId;
+
   Note.findByIdAndUpdate(searchId, inputObj, {new:true})
     .then( results => {
-      res.location(`${req.originalUrl}/${results.id}`).status(201).json( results );
+      res.location(`${req.originalUrl}/${results.id}`).status(200).json( results );
     })
     .catch(err => {
-      console.error(err);
-      res.status(500).json({ message: 'Internal server error' });
-    })
+      if (err.code === 11000) {
+        err = new Error('The `id` is not valid.');
+        err.status = 400;        
+      }
+      err.status = 404;
+      next(err);
+    });
   
 
 });
@@ -164,7 +196,7 @@ router.delete('/:id', (req, res, next) => {
     })
     .catch(err => {
       console.error(err);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ message: 'Internal Server Error' });
     })
 });
 

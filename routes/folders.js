@@ -26,7 +26,7 @@ router.get('/', (req, res, next) => {
     })
     .catch( err => {
       console.error(err);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ message: 'Internal Server Error' });
     });
 });
 
@@ -52,7 +52,7 @@ router.get('/:id', (req, res, next) => {
     })
     .catch(err => {
       console.error(err);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ message: 'Internal Server Error' });
     });
 });
 
@@ -73,13 +73,18 @@ router.post('/', (req, res, next) => {
   Folder
     .create(newFolder)
     .then( results => {
-      res.location(`${req.originalUrl}/${results.id}`).status(201).json( results );
+      res.location(`${req.originalUrl}/${results.id}`).status(200).json( results );
     })
     .catch(err => {
       if (err.code === 11000) {
-        err = new Error('The folder name already exists');
+        err = new Error('Folder name already exists');
         err.status = 400;        
       }
+      if (err.message instanceof mongoose.Error.CastError) {
+        err = new Error('Item not found');
+        err.status = 404;
+      }
+        
       next(err);
     });
 });
@@ -109,12 +114,16 @@ router.put('/:id', (req, res, next) => {
   Folder
     .findByIdAndUpdate(searchId, updateFolder, {new:true})
     .then( results => {
-      res.location(`${req.originalUrl}/${results.id}`).status(201).json( results );
+      res.location(`${req.originalUrl}/${results.id}`).status(200).json( results );
     })
     .catch(err => {
       if (err.code === 11000) {
-        err = new Error('The folder name already exists');
+        err = new Error('Folder name already exists');
         err.status = 400;        
+      }
+      if (err.message instanceof mongoose.Error.CastError) {
+        err = new Error('Item not found');
+        err.status = 404;
       }
       next(err);
     });
@@ -148,6 +157,7 @@ router.delete('/:id', (req, res, next) => {
       res.status(204).end();
     })
     .catch(err => {
+      err.status = 500;
       next(err);
     })
   
