@@ -1,147 +1,139 @@
 'use strict';
+
 const express = require('express');
 const mongoose = require('mongoose');
 
-// Mongoose internally uses a promise-like object,
-// but its better to make Mongoose use built in es6 promises
-mongoose.Promise = global.Promise;
-
-// config.js is where we control constants for entire
-// app like PORT and DATABASE_URL
-//const { PORT, MONGODB_URI } = require('../config');
+const Tag = require('../models/tag');
 const Note = require('../models/note');
-const Folder = require('../models/folder');
-const Tag = require('../models/tags');
 
 const router = express.Router();
 
-/* ================ GET/READ ALL TAGS ================ */
+/* ========== GET/READ ALL ITEMS ========== */
 router.get('/', (req, res, next) => {
-  Tag
-    .find()
-    .sort({'name':1})
-    .then( results => {
-      if (results) {
-        return res.json(results);
-      }
+
+  Tag.find()
+    .sort('name')
+    .then(results => {
+      res.json(results);
     })
     .catch(err => {
-      console.error(err);
-      res.status(500).json({ message: 'Internal Server Error'})
+      next(err);
     });
-})
+});
 
-/* ================ GET/READ A SINGLE TAG ================ */
+/* ========== GET/READ A SINGLE ITEM ========== */
 router.get('/:id', (req, res, next) => {
-  const searchId = req.params.id;
+  const { id } = req.params;
 
-  if (!mongoose.Types.ObjectId.isValid(searchId)) {
+  /***** Never trust users - validate input *****/
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
     err.status = 400;
     return next(err);
   }
 
-  Tag
-    .findById(searchId)
-    .then( results => {
-      if (results) {
-        res.json(results);
+  Tag.findById(id)
+    .then(result => {
+      if (result) {
+        res.json(result);
       } else {
-        res.status(404);
         next();
       }
     })
-    .catch( error => {
-      console.error(error)
-      res.status(500).json({ message: 'Internal Server Error'});
-    })
-})
+    .catch(err => {
+      next(err);
+    });
+});
 
-/* ================ POST A TAG =========================== */
+/* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
-  const name = req.body.name;
-  
+  const { name } = req.body;
+
+  const newTag = { name };
+
+  /***** Never trust users - validate input *****/
   if (!name) {
     const err = new Error('Missing `name` in request body');
     err.status = 400;
     return next(err);
   }
 
-  const newTag = {
-    name: name
-  };
-
-  Tag
-    .create(newTag)
-    .then(results => {
-      res.location(`${req.originalUrl}/${results.id}`).status(201).json( results );
+  Tag.create(newTag)
+    .then(result => {
+      res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
     })
     .catch(err => {
       if (err.code === 11000) {
-        err = new Error('The tag name already exists');
-        err.status = 400;        
+        err = new Error('Tag name already exists');
+        err.status = 400;
       }
       next(err);
     });
-})
+});
 
-/* ================ UPDATE A TAG =========================== */
+/* ========== PUT/UPDATE A SINGLE ITEM ========== */
 router.put('/:id', (req, res, next) => {
-  const name = req.body.name;
-  const searchId = req.params.id;
+  const { id } = req.params;
+  const { name } = req.body;
 
-  /***** Never trust users. Validate input *****/
-  if (!mongoose.Types.ObjectId.isValid(searchId)) {
+  /***** Never trust users - validate input *****/
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
     err.status = 400;
     return next(err);
   }
 
   if (!name) {
-    const err = new Error('Name is a required field')
+    const err = new Error('Missing `name` in request body');
     err.status = 400;
-    return next(err)
+    return next(err);
   }
 
-  const updateObj = { name: name };
+  const updateTag = { name };
 
-  Tag
-    .findByIdAndUpdate(searchId, updateObj, {new:true})
-    .then( results => {
-      res.location(`${req.originalUrl}/${results.id}`).status(201).json( results );
+  Tag.findByIdAndUpdate(id, updateTag, { new: true })
+    .then(result => {
+      if (result) {
+        res.json(result);
+      } else {
+        next();
+      }
     })
     .catch(err => {
       if (err.code === 11000) {
-        err = new Error('The tag name already exists');
-        err.status = 400;        
+        err = new Error('Tag name already exists');
+        err.status = 400;
       }
       next(err);
-    })
-})
+    });
+});
 
-/* ========== DELETE/REMOVE A SINGLE TAG ========== */
+/* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/:id', (req, res, next) => {
-  const searchId = req.params.id;
+  const { id } = req.params;
 
-  if (!mongoose.Types.ObjectId.isValid(searchId)) {
+  /***** Never trust users - validate input *****/
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
     err.status = 400;
     return next(err);
   }
 
-  const tagRemovePromise = Tag.findByIdAndRemove(searchId);
+  const tagRemovePromise = Tag.findByIdAndRemove(id);
 
-  const noteRemovePromise = Note.updateMany(
-    {tags: searchId},
-    {$pull: {tags:searchId}}
+  const noteUpdatePromise = Note.updateMany(
+    { tags: id },
+    { $pull: { tags: id } }
   );
 
-  Promise.all([tagRemovePromise, noteRemovePromise])
-    .then( () => {
-      res.status(204).end();
+  Promise.all([tagRemovePromise, noteUpdatePromise])
+    .then(() => {
+      res.sendStatus(204);
     })
     .catch(err => {
       next(err);
-    })
-})
+    });
+
+});
+
 module.exports = router;

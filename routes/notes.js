@@ -3,20 +3,14 @@
 const express = require('express');
 const mongoose = require('mongoose');
 
-// Mongoose internally uses a promise-like object,
-// but its better to make Mongoose use built in es6 promises
-mongoose.Promise = global.Promise;
-
-// config.js is where we control constants for entire
-// app like PORT and DATABASE_URL
 const Note = require('../models/note');
 
 const router = express.Router();
 
-/* ========== GET/READ ALL ITEMS ========== */  
+/* ========== GET/READ ALL ITEMS ========== */
 router.get('/', (req, res, next) => {
   const { searchTerm, folderId, tagId } = req.query;
-  
+
   let filter = {};
 
   if (searchTerm) {
@@ -36,168 +30,158 @@ router.get('/', (req, res, next) => {
     filter.tags = tagId;
   }
 
-  Note
-    .find(filter)
-    .sort({ updatedAt: 'desc' })
-    .populate('folderId')
+  Note.find(filter)
     .populate('tags')
+    .sort({ updatedAt: 'desc' })
     .then(results => {
-      res.json( results );
+      res.json(results);
     })
     .catch(err => {
-      console.error(err);
-      res.status(500).json({ message: 'Internal Server Error' });
+      next(err);
     });
 });
 
 /* ========== GET/READ A SINGLE ITEM ========== */
 router.get('/:id', (req, res, next) => {
-  const searchId = req.params.id;
+  const { id } = req.params;
 
-  Note
-    .findById(searchId)
-    .sort({ updatedAt: 'desc' })
-    .populate('folderId')
+  /***** Never trust users - validate input *****/
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
+  Note.findById(id)
     .populate('tags')
-    .then(results => {
-      if (results) {
-        res.json(results);
+    .then(result => {
+      if (result) {
+        res.json(result);
       } else {
-        res.status(404);
         next();
       }
     })
     .catch(err => {
-      if (err.code === 11000) {
-        err = new Error('The `id` is not valid.');
-        err.status = 400;        
-      }
       next(err);
     });
-  
-
 });
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
-  const { title, content, tags } = req.body;
-  let { folderId } = req.body;
+  const { title, content, folderId, tags = [] } = req.body;
 
-  /***** Never trust users. Validate input *****/
+  /***** Never trust users - validate input *****/
   if (!title) {
     const err = new Error('Missing `title` in request body');
     err.status = 400;
     return next(err);
   }
 
-  if (folderId === '') {
-    folderId = null;
-  }
-
   if (folderId && !mongoose.Types.ObjectId.isValid(folderId)) {
     const err = new Error('The `folderId` is not valid');
     err.status = 400;
     return next(err);
   }
 
-  // need to validate tag ids
-  if (tags) {
-    for (let tag of tags) {
-      if (!mongoose.Types.ObjectId.isValid(tag)) {
-        const err = new Error('The `tags` array contains an invalid `id`');
-        err.status = 400;
-        return next(err);
-      }
+  tags.forEach((tag) => {
+    if (!mongoose.Types.ObjectId.isValid(tag)) {
+      const err = new Error('The `tags` array contains an invalid `id`');
+      err.status = 400;
+      return next(err);
     }
-  }
-  
-  const inputObj = {
-    title: title,
-    content: content,
-    folderId: folderId,
-    tags: tags
-  };
+  });
 
-  Note.create(inputObj)
-    .then(results => {
-      res.location(`${req.originalUrl}/${results.id}`).status(201).json( results );
+  const newNote = { title, content, folderId, tags };
+  if (newNote.folderId === '') {
+    delete newNote.folderId;
+  }
+
+  Note.create(newNote)
+    .then(result => {
+      res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
     })
     .catch(err => {
-      console.error(err);
-      res.status(500).json({ message: 'Internal Server Error' });
-    })
+      next(err);
+    });
 });
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
 router.put('/:id', (req, res, next) => {
-  const searchId = req.params.id;
-  const { title, content, folderId } = req.body;
-  let { tags } = req.body;
-  let inputObj = {};
+  const { id } = req.params;
 
-  /***** Never trust users. Validate input *****/
-  if (title) {
-    inputObj.title = title;
-  } else if (!title) {
-    const err = new Error('The `title` may not be an empty string');
-    err.status = 400;
-    return next(err);
-  }
-  if (folderId && !mongoose.Types.ObjectId.isValid(folderId)) {
-    const err = new Error('The `folderId` is not valid');
-    err.status = 400;
-    return next(err);
-  }
+  const toUpdate = {};
+  const updateableFields = ['title', 'content', 'folderId', 'tags'];
 
-  if (!mongoose.Types.ObjectId.isValid(searchId)) {
+  updateableFields.forEach(field => {
+    if (field in req.body) {
+      toUpdate[field] = req.body[field];
+    }
+  });
+
+  /***** Never trust users - validate input *****/
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
     err.status = 400;
     return next(err);
   }
 
-  // need to validate tag ids
-  if (tags) {
-    for (let tag of tags) {
-      if (!mongoose.Types.ObjectId.isValid(tag)) {
-        const err = new Error('The `tag id` is not valid');
-        err.status = 400;
-        return next(err);
-      }
-    }
-    inputObj.tags = tags;
+  if (toUpdate.title === '') {
+    const err = new Error('The `title` may not be an empty string');
+    err.status = 400;
+    return next(err);
   }
 
-  if (content) inputObj.content = content;
-  if (folderId) inputObj.folderId = folderId;
+  if (toUpdate.folderId && !mongoose.Types.ObjectId.isValid(toUpdate.folderId)) {
+    const err = new Error('The `folderId` is not valid');
+    err.status = 400;
+    return next(err);
+  }
 
-  Note.findByIdAndUpdate(searchId, inputObj, {new:true})
-    .then( results => {
-      res.location(`${req.originalUrl}/${results.id}`).status(200).json( results );
+  if (toUpdate.tags) {
+    const badIds = toUpdate.tags.filter((tag) => !mongoose.Types.ObjectId.isValid(tag));
+    if (badIds.length) {
+      const err = new Error('The `tags` array contains an invalid `id`');
+      err.status = 400;
+      return next(err);
+    }
+  }
+
+  if (toUpdate.folderId === '') {
+    delete toUpdate.folderId;
+    toUpdate.$unset = {folderId : 1};
+  }
+
+  Note.findByIdAndUpdate(id, toUpdate, { new: true })
+    .then(result => {
+      if (result) {
+        res.json(result);
+      } else {
+        next();
+      }
     })
     .catch(err => {
-      if (err.code === 11000) {
-        err = new Error('The `id` is not valid.');
-        err.status = 400;        
-      }
-      err.status = 404;
       next(err);
     });
-  
-
 });
 
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/:id', (req, res, next) => {
-  const searchId = req.params.id;
+  const { id } = req.params;
 
-  Note.findByIdAndRemove(searchId)
-    .then( results => {
-      res.status(204).end();
+  /***** Never trust users - validate input *****/
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
+  Note.findByIdAndRemove(id)
+    .then(() => {
+      res.sendStatus(204);
     })
     .catch(err => {
-      console.error(err);
-      res.status(500).json({ message: 'Internal Server Error' });
-    })
+      next(err);
+    });
 });
 
 module.exports = router;

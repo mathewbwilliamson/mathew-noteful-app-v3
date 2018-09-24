@@ -7,7 +7,7 @@ const express = require('express');
 const sinon = require('sinon');
 
 const app = require('../server');
-const Tag = require('../models/tags');
+const Tag = require('../models/tag');
 const Note = require('../models/note');
 const Folder = require('../models/folder');
 const { notes, folders, tags } = require('../db/data');
