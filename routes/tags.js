@@ -3,15 +3,15 @@
 const express = require('express');
 const mongoose = require('mongoose');
 
-const Folder = require('../models/folder');
+const Tag = require('../models/tag');
 const Note = require('../models/note');
 
 const router = express.Router();
 
 /* ========== GET/READ ALL ITEMS ========== */
 router.get('/', (req, res, next) => {
-  
-  Folder.find()
+
+  Tag.find()
     .sort('name')
     .then(results => {
       res.json(results);
@@ -32,7 +32,7 @@ router.get('/:id', (req, res, next) => {
     return next(err);
   }
 
-  Folder.findById(id)
+  Tag.findById(id)
     .then(result => {
       if (result) {
         res.json(result);
@@ -49,7 +49,7 @@ router.get('/:id', (req, res, next) => {
 router.post('/', (req, res, next) => {
   const { name } = req.body;
 
-  const newFolder = { name };
+  const newTag = { name };
 
   /***** Never trust users - validate input *****/
   if (!name) {
@@ -58,13 +58,13 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
-  Folder.create(newFolder)
+  Tag.create(newTag)
     .then(result => {
       res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
     })
     .catch(err => {
       if (err.code === 11000) {
-        err = new Error('Folder name already exists');
+        err = new Error('Tag name already exists');
         err.status = 400;
       }
       next(err);
@@ -89,9 +89,9 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
-  const updateFolder = { name };
+  const updateTag = { name };
 
-  Folder.findByIdAndUpdate(id, updateFolder, { new: true })
+  Tag.findByIdAndUpdate(id, updateTag, { new: true })
     .then(result => {
       if (result) {
         res.json(result);
@@ -101,7 +101,7 @@ router.put('/:id', (req, res, next) => {
     })
     .catch(err => {
       if (err.code === 11000) {
-        err = new Error('Folder name already exists');
+        err = new Error('Tag name already exists');
         err.status = 400;
       }
       next(err);
@@ -119,23 +119,21 @@ router.delete('/:id', (req, res, next) => {
     return next(err);
   }
 
-  // ON DELETE SET NULL equivalent
-  const folderRemovePromise = Folder.findByIdAndRemove( id );
-  // ON DELETE CASCADE equivalent
-  // const noteRemovePromise = Note.deleteMany({ folderId: id });
+  const tagRemovePromise = Tag.findByIdAndRemove(id);
 
-  const noteRemovePromise = Note.updateMany(
-    { folderId: id },
-    { $unset: { folderId: '' } }
+  const noteUpdatePromise = Note.updateMany(
+    { tags: id },
+    { $pull: { tags: id } }
   );
 
-  Promise.all([folderRemovePromise, noteRemovePromise])
+  Promise.all([tagRemovePromise, noteUpdatePromise])
     .then(() => {
       res.sendStatus(204);
     })
     .catch(err => {
       next(err);
     });
+
 });
 
 module.exports = router;

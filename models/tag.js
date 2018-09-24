@@ -18,4 +18,4 @@ schema.set('toObject', {
   }
 });
 
-module.exports = mongoose.model('Folder', schema);
+module.exports = mongoose.model('Tag', schema);
