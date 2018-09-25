@@ -7,6 +7,7 @@ const api = (function () {
       type: 'GET',
       url: path,
       dataType: 'json',
+      headers: { 'Authorization': `Bearer ${store.authToken}` },
       data: query
     });
   };
@@ -15,6 +16,7 @@ const api = (function () {
       type: 'GET',
       dataType: 'json',
       url: path,
+      headers: { 'Authorization': `Bearer ${store.authToken}` },
     });
   };
   const update = function(path, obj) {
@@ -23,6 +25,7 @@ const api = (function () {
       url: path,
       contentType: 'application/json',
       dataType: 'json',
+      headers: { 'Authorization': `Bearer ${store.authToken}` },
       data: JSON.stringify(obj)
     });
   };
@@ -32,6 +35,7 @@ const api = (function () {
       url: path,
       contentType: 'application/json',
       dataType: 'json',
+      headers: { 'Authorization': `Bearer ${store.authToken}` },
       processData:false,
       data: JSON.stringify(obj)
     });
@@ -39,6 +43,7 @@ const api = (function () {
   const remove = function(path) {
     return $.ajax({
       type: 'DELETE',
+      headers: { 'Authorization': `Bearer ${store.authToken}` },
       dataType: 'json',
       url: path,
     });
