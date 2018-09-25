@@ -2,11 +2,16 @@
 
 const express = require('express');
 const mongoose = require('mongoose');
+const passport = require('passport');
+const jwt = require('jsonwebtoken');
 
 const Tag = require('../models/tag');
 const Note = require('../models/note');
 
 const router = express.Router();
+
+const jwtAuth = passport.authenticate('jwt', { session: false, failWithError: true });
+router.use('/', jwtAuth);
 
 /* ========== GET/READ ALL ITEMS ========== */
 router.get('/', (req, res, next) => {
