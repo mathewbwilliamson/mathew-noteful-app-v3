@@ -7,10 +7,12 @@ const passport = require('passport');
 
 const { PORT, MONGODB_URI } = require('./config');
 const localStrategy = require('./passport/local');
+const jwtStrategy = require('./passport/jwt');
 
 passport.use(localStrategy);
-const authRouter = require('./routes/auth');
+passport.use(jwtStrategy);
 
+const authRouter = require('./routes/auth');
 const notesRouter = require('./routes/notes');
 const foldersRouter = require('./routes/folders');
 const tagsRouter = require('./routes/tags');
