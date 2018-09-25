@@ -10,6 +10,18 @@ const router = express.Router();
 router.post('/', (req, res, next) => {
   const { username, password, fullname } = req.body;
 
+  //Need to memorize this
+  const requiredFields = ['username', 'password'];
+  const missingField = requiredFields.find( field => !(field in req.body));
+
+  if (missingField) {
+    const err = new Error(`Missing '${missingField}' in request body`);
+    err.status = 422;
+    next(err);
+  }
+
+  //Fields are type String
+
   const newUserObject = {
     username,
     password,
