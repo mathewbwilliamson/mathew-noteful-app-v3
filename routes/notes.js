@@ -6,11 +6,53 @@ const passport = require('passport');
 const jwt = require('jsonwebtoken');
 
 const Note = require('../models/note');
+const Folder = require('../models/folder');
+const Tag = require('../models/tag');
 
 const router = express.Router();
 
 const jwtAuth = passport.authenticate('jwt', { session: false, failWithError: true });
 router.use('/', jwtAuth);
+
+function validateFolderID( folderId, userId ) {
+  if (folderId && !mongoose.Types.ObjectId.isValid(folderId)) {
+    const err = new Error('The `folderId` is not valid');
+    err.status = 400;
+    return Promise.reject(err);
+  }
+
+  return Folder.count({_id: folderId, userId})
+    .then( count => {
+      if (count === 0) {
+        const err = new Error('The `folderId` is not valid');
+        err.status = 400;
+        return Promise.reject(err);
+      }
+    });
+}
+
+function validateTags( tags, userId ) {
+  if (!tags) return Promise.resolve();
+
+  if (!Array.isArray(tags)) {
+    const err = new Error('The `tags` must be an array');
+    err.status = 400;
+    return Promise.reject(err);
+  }
+
+  return Tag.find({ $and: [{ _id: { $in: tags }, userId }] })
+    .then( matches => {
+      if (matches.length !== tags.length) {
+        const err = new Error('The `tags` are not valid');
+        err.status = 400;
+        return Promise.reject(err);
+      }
+      // if (!mongoose.Types.ObjectId.isValid(tag)) {
+      //   const err = new Error('The `tags` array contains an invalid `id`');
+      //   err.status = 400;
+      //   return Promise.reject(err);
+    });
+}
 
 /* ========== GET/READ ALL ITEMS ========== */
 router.get('/', (req, res, next) => {
@@ -81,32 +123,29 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
-  if (folderId && !mongoose.Types.ObjectId.isValid(folderId)) {
-    const err = new Error('The `folderId` is not valid');
-    err.status = 400;
-    return next(err);
-  }
-
-  tags.forEach((tag) => {
-    if (!mongoose.Types.ObjectId.isValid(tag)) {
-      const err = new Error('The `tags` array contains an invalid `id`');
-      err.status = 400;
-      return next(err);
-    }
-  });
-
   const newNote = { title, content, folderId, tags, userId };
   if (newNote.folderId === '') {
     delete newNote.folderId;
   }
 
-  Note.create(newNote)
+  Promise.all([
+    validateFolderID(folderId, userId),
+    validateTags( tags, userId)
+  ])
+    .then( () => Note.create(newNote) )
     .then(result => {
       res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
     })
     .catch(err => {
+      if (err.code === 11000) {
+        err = new Error('Note name already exists');
+        err.status = 400;
+      }
       next(err);
     });
+
+
+  
 });
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
