@@ -270,7 +270,7 @@ describe('Noteful API - Folders', function () {
         });
     });
 
-    it.skip('should respond with a 404 for an id that does not exist', function () {
+    it('should respond with a 404 for an id that does not exist', function () {
       const updateItem = { name: 'Blah' };
       // The string "DOESNOTEXIST" is 12 bytes which is a valid Mongo ObjectId
       return chai.request(app)
@@ -398,7 +398,7 @@ describe('Noteful API - Folders', function () {
         });
     });
 
-    it.skip('should catch errors and respond properly', function () {
+    it('should catch errors and respond properly', function () {
       sandbox.stub(express.response, 'sendStatus').throws('FakeError');
       return Folder.findOne()
         .then(data => {
