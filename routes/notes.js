@@ -143,9 +143,6 @@ router.post('/', (req, res, next) => {
       }
       next(err);
     });
-
-
-  
 });
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
@@ -175,27 +172,31 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
-  if (toUpdate.folderId && !mongoose.Types.ObjectId.isValid(toUpdate.folderId)) {
-    const err = new Error('The `folderId` is not valid');
-    err.status = 400;
-    return next(err);
-  }
+  // if (toUpdate.folderId && !mongoose.Types.ObjectId.isValid(toUpdate.folderId)) {
+  //   const err = new Error('The `folderId` is not valid');
+  //   err.status = 400;
+  //   return next(err);
+  // }
 
-  if (toUpdate.tags) {
-    const badIds = toUpdate.tags.filter((tag) => !mongoose.Types.ObjectId.isValid(tag));
-    if (badIds.length) {
-      const err = new Error('The `tags` array contains an invalid `id`');
-      err.status = 400;
-      return next(err);
-    }
-  }
+  // if (toUpdate.tags) {
+  //   const badIds = toUpdate.tags.filter((tag) => !mongoose.Types.ObjectId.isValid(tag));
+  //   if (badIds.length) {
+  //     const err = new Error('The `tags` array contains an invalid `id`');
+  //     err.status = 400;
+  //     return next(err);
+  //   }
+  // }
 
   if (toUpdate.folderId === '') {
     delete toUpdate.folderId;
     toUpdate.$unset = {folderId : 1};
   }
 
-  Note.findOneAndUpdate({_id: id, userId}, toUpdate, { new: true })
+  Promise.all([
+    validateFolderID(toUpdate.folderId, userId),
+    validateTags( toUpdate.tags, userId)
+  ])
+    .then( () => Note.findOneAndUpdate({_id: id, userId}, toUpdate, { new: true }) )
     .then(result => {
       if (result) {
         res.json(result);
@@ -204,6 +205,10 @@ router.put('/:id', (req, res, next) => {
       }
     })
     .catch(err => {
+      if (err.code === 11000) {
+        err = new Error('Note name already exists');
+        err.status = 400;
+      }
       next(err);
     });
 });
