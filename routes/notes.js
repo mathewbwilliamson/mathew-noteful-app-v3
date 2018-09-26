@@ -15,8 +15,9 @@ router.use('/', jwtAuth);
 /* ========== GET/READ ALL ITEMS ========== */
 router.get('/', (req, res, next) => {
   const { searchTerm, folderId, tagId } = req.query;
+  const userId = req.user.id;
 
-  let filter = {};
+  let filter = { userId };
 
   if (searchTerm) {
     // Search the title for a term
