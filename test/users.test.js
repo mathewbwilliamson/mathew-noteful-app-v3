@@ -24,6 +24,19 @@ const sandbox = sinon.createSandbox();
 let token = '';
 let user = '';
 
+function basicFailureChai(newUser) {
+  return chai.request(app)
+    .post('/api/users/')
+    .set('Authorization', `Bearer ${token}`)
+    .send(newUser)
+    .then(res => {
+      expect(res).to.have.status(422);
+      expect(res).to.be.json;
+      expect(res.body).to.be.a('object');
+      expect(res.body).to.have.all.keys('code', 'reason', 'message', 'location');
+    });
+}
+
 describe('Noteful API - Users', function () {
 
   before(function () {
@@ -63,7 +76,7 @@ describe('Noteful API - Users', function () {
     return mongoose.disconnect();
   });
 
-  describe('POST /api/users', function () {
+  describe.only('POST /api/users', function () {
     it('should create and return a new user when provided valid data', function () {
       const newUser = { 
         username: 'newuser',
@@ -97,17 +110,7 @@ describe('Noteful API - Users', function () {
         password: 'password', 
         fullname:'full name' 
       };
-      let body;
-      return chai.request(app)
-        .post('/api/users/')
-        .set('Authorization', `Bearer ${token}`)
-        .send(newUser)
-        .then(res => {
-          expect(res).to.have.status(422);
-          expect(res).to.be.json;
-          expect(res.body).to.be.a('object');
-          expect(res.body).to.have.all.keys('code', 'reason', 'message', 'location');
-        });
+      return basicFailureChai(newUser);
     });
 
     it('Should reject users with a missing password', function() {
@@ -115,17 +118,7 @@ describe('Noteful API - Users', function () {
         username: 'username', 
         fullname:'full name' 
       };
-      let body;
-      return chai.request(app)
-        .post('/api/users/')
-        .set('Authorization', `Bearer ${token}`)
-        .send(newUser)
-        .then(res => {
-          expect(res).to.have.status(422);
-          expect(res).to.be.json;
-          expect(res.body).to.be.a('object');
-          expect(res.body).to.have.all.keys('code', 'reason', 'message', 'location');
-        });
+      return basicFailureChai(newUser);
     });
 
     it('Should reject users with non-string username', function () {
@@ -134,17 +127,7 @@ describe('Noteful API - Users', function () {
         password: 'password', 
         fullname:'full name' 
       };
-      let body;
-      return chai.request(app)
-        .post('/api/users/')
-        .set('Authorization', `Bearer ${token}`)
-        .send(newUser)
-        .then(res => {
-          expect(res).to.have.status(422);
-          expect(res).to.be.json;
-          expect(res.body).to.be.a('object');
-          expect(res.body).to.have.all.keys('code', 'reason', 'message', 'location');
-        });
+      return basicFailureChai(newUser);
     });
 
     it('Should reject users with non-string password', function () {
@@ -153,63 +136,90 @@ describe('Noteful API - Users', function () {
         password: 342423424, 
         fullname:'full name' 
       };
-      let body;
+      return basicFailureChai(newUser);
+    });
+
+    it('Should reject users with non-string fullname', function () {
+      const newUser = { 
+        username: 'username', 
+        password: 'password', 
+        fullname: 342423424 
+      };
+      return basicFailureChai(newUser);
+    });
+
+    it('Should reject users with non-trimmed username', function () {
+      const newUser = { 
+        username: 'username    ', 
+        password: 'password', 
+        fullname: 'full name' 
+      };
+      return basicFailureChai(newUser);
+    });
+
+    it('Should reject users with non-trimmed password', function () {
+      const newUser = { 
+        username: 'username', 
+        password: 'password   ', 
+        fullname: 'full name' 
+      };
+      return basicFailureChai(newUser);
+    });
+
+    it('Should reject users with empty username', function () {
+      const newUser = { 
+        username: '', 
+        password: 'password', 
+        fullname: 'full name' 
+      };
+      return basicFailureChai(newUser);
+    });
+
+    it('Should reject users with password less than eight characters', function () {
+      const newUser = { 
+        username: 'username', 
+        password: 'passwor', 
+        fullname: 'full name' 
+      };
+      return basicFailureChai(newUser);
+    });
+
+    it('Should reject users with password greater than 72 characters', function () {
+      const newUser = { 
+        username: 'username', 
+        password: [...new Array(73)].map( (x,i) => 'a').join(''), // or 'a'.repeat(73)
+        fullname: 'full name' 
+      };
+      return basicFailureChai(newUser);
+    });
+
+    it('Should reject users with duplicate username', function () {
+      const newUser = { 
+        username: 'username', 
+        password: 'password',
+        fullname: 'full name' 
+      };
+      const newUser2 = { 
+        username: 'username', 
+        password: 'password2',
+        fullname: 'full name 2' 
+      };
       return chai.request(app)
         .post('/api/users/')
         .set('Authorization', `Bearer ${token}`)
         .send(newUser)
         .then(res => {
-          expect(res).to.have.status(422);
-          expect(res).to.be.json;
-          expect(res.body).to.be.a('object');
-          expect(res.body).to.have.all.keys('code', 'reason', 'message', 'location');
-        });
+          return chai.request(app)
+            .post('/api/users/')
+            .set('Authorization', `Bearer ${token}`)
+            .send(newUser2)
+            .then(res => {
+              expect(res).to.have.status(400);
+              expect(res).to.be.json;
+              expect(res.body).to.be.a('object');
+              expect(res.body).to.have.all.keys('status', 'message');
+            });
+        })
     });
-
-    it('Should reject users with non-string first name', function () {
-      const newUser = { 
-        username: 'thisisanewuser', 
-        password: 'password', 
-        fullname:'full name' 
-      };
-      let body;
-      return '';
-    });
-
-    it('Should reject users with non-string last name', function () {
-      return '';
-    });
-
-    it('Should reject users with non-trimmed username', function () {
-      return '';
-    });
-
-    it('Should reject users with non-trimmed password', function () {
-      return '';
-    });
-
-    it('Should reject users with empty username', function () {
-      return '';
-    });
-
-    it('Should reject users with password less than ten characters', function () {
-      return '';
-    });
-
-    it('Should reject users with password greater than 72 characters', function () {
-      return '';
-    });
-
-    it('Should reject users with duplicate username', function () {
-      return '';
-    });
-
-    it('Should create a new user', function () {
-      return '';
-    });
-
-    it('Should trim firstName and lastName', function () {
-      return '';
-    });
-  });
+  })
 })
