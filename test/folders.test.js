@@ -7,7 +7,6 @@ const express = require('express');
 const sinon = require('sinon');
 const jwt = require('jsonwebtoken');
 
-
 const app = require('../server');
 const Folder = require('../models/folder');
 const Note = require('../models/note');
