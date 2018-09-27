@@ -127,23 +127,26 @@ describe('Noteful API - Tags', function () {
         .then(_data => {
           data = _data;
           return chai.request(app)
-            .get(`/api/tags/${data.id}`);
+            .get(`/api/tags/${data.id}`)
+            .set('Authorization', `Bearer ${token}`);
         })
         .then((res) => {
+          console.log(res.body)
           expect(res).to.have.status(200);
           expect(res).to.be.json;
-          expect(res.body).to.be.an('object');
-          expect(res.body).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt');
-          expect(res.body.id).to.equal(data.id);
-          expect(res.body.name).to.equal(data.name);
-          expect(new Date(res.body.createdAt)).to.deep.equal(data.createdAt);
-          expect(new Date(res.body.updatedAt)).to.deep.equal(data.updatedAt);
+          expect(res.body[0]).to.be.an('object');
+          expect(res.body[0]).to.have.all.keys('id', 'name', 'userId', 'createdAt', 'updatedAt');
+          expect(res.body[0].id).to.equal(data.id);
+          expect(res.body[0].name).to.equal(data.name);
+          expect(new Date(res.body[0].createdAt)).to.deep.equal(data.createdAt);
+          expect(new Date(res.body[0].updatedAt)).to.deep.equal(data.updatedAt);
         });
     });
 
     it('should respond with a 400 for an invalid id', function () {
       return chai.request(app)
         .get('/api/tags/NOT-A-VALID-ID')
+        .set('Authorization', `Bearer ${token}`)
         .then(res => {
           expect(res).to.have.status(400);
           expect(res.body.message).to.equal('The `id` is not valid');
@@ -154,6 +157,7 @@ describe('Noteful API - Tags', function () {
       // The string "DOESNOTEXIST" is 12 bytes which is a valid Mongo ObjectId
       return chai.request(app)
         .get('/api/tags/DOESNOTEXIST')
+        .set('Authorization', `Bearer ${token}`)
         .then(res => {
           expect(res).to.have.status(404);
         });
@@ -164,7 +168,9 @@ describe('Noteful API - Tags', function () {
 
       return Tag.findOne()
         .then(data => {
-          return chai.request(app).get(`/api/tags/${data.id}`);
+          return chai.request(app)
+            .get(`/api/tags/${data.id}`)
+            .set('Authorization', `Bearer ${token}`);
         })
         .then(res => {
           expect(res).to.have.status(500);

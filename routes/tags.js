@@ -41,6 +41,12 @@ router.get('/:id', (req, res, next) => {
 
   Tag.find({_id: id, userId})
     .then(result => {
+      if (result.length === 0)
+      {
+        const err = new Error('The `id` is not valid');
+        err.status = 404;
+        return next(err);
+      }
       if (result) {
         res.json(result);
       } else {
