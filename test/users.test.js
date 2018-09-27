@@ -54,9 +54,10 @@ describe('Noteful API - Users', function () {
     return mongoose.disconnect();
   });
 
-  describe.only('GET /api/users', function () {
+  describe('GET /api/users', function () {
     it('Should reject users with missing username', function() {
       
     })
 
-  }
+  })
+})
