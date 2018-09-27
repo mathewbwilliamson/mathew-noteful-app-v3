@@ -395,7 +395,7 @@ describe('Noteful API - Folders', function () {
 
   });
 
-  describe.only('DELETE /api/folders/:id', function () {
+  describe('DELETE /api/folders/:id', function () {
 
     it('should delete an existing folder and respond with 204', function () {
       let data;
@@ -403,8 +403,8 @@ describe('Noteful API - Folders', function () {
         .then(_data => {
           data = _data;
           return chai.request(app)
+            .delete(`/api/folders/${data.id}`)
             .set('Authorization', `Bearer ${token}`)
-            .delete(`/api/folders/${data.id}`);
         })
         .then(function (res) {
           expect(res).to.have.status(204);
@@ -422,8 +422,9 @@ describe('Noteful API - Folders', function () {
         .then(data => {
           folderId = data.folderId;
           return chai.request(app)
+            .delete(`/api/folders/${folderId}`)
             .set('Authorization', `Bearer ${token}`)  
-            .delete(`/api/folders/${folderId}`);
+            
         })
         .then(function (res) {
           expect(res).to.have.status(204);
@@ -437,8 +438,8 @@ describe('Noteful API - Folders', function () {
 
     it('should respond with a 400 for an invalid id', function () {
       return chai.request(app)
-        .set('Authorization', `Bearer ${token}`)
         .delete('/api/folders/NOT-A-VALID-ID')
+        .set('Authorization', `Bearer ${token}`)
         .then(res => {
           expect(res).to.have.status(400);
           expect(res.body.message).to.equal('The `id` is not valid');
@@ -450,8 +451,8 @@ describe('Noteful API - Folders', function () {
       return Folder.findOne()
         .then(data => {
           return chai.request(app)
-            .set('Authorization', `Bearer ${token}`)
-            .delete(`/api/folders/${data.id}`);
+            .delete(`/api/folders/${data.id}`)
+            .set('Authorization', `Bearer ${token}`);
         })
         .then(res => {
           expect(res).to.have.status(500); //WHY A STATUS OF 500 if the thing succeeded?
