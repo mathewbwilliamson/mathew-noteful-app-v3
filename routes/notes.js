@@ -15,6 +15,9 @@ const jwtAuth = passport.authenticate('jwt', { session: false, failWithError: tr
 router.use('/', jwtAuth);
 
 function validateFolderID( folderId, userId ) {
+  if (!folderId) {
+    return Promise.resolve();
+  }
   if (folderId && !mongoose.Types.ObjectId.isValid(folderId)) {
     const err = new Error('The `folderId` is not valid');
     err.status = 400;
@@ -40,6 +43,16 @@ function validateTags( tags, userId ) {
     return Promise.reject(err);
   }
 
+  tags.forEach(tag => {
+    console.log('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+    if (!mongoose.Types.ObjectId.isValid(tag)) {
+      console.log('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB')
+      const err = new Error('The `tagId` is not valid');
+      err.status = 400;
+      return Promise.reject(err);
+    }
+  })
+
   return Tag.find({ $and: [{ _id: { $in: tags }, userId }] })
     .then( matches => {
       if (matches.length !== tags.length) {
@@ -47,10 +60,6 @@ function validateTags( tags, userId ) {
         err.status = 400;
         return Promise.reject(err);
       }
-      // if (!mongoose.Types.ObjectId.isValid(tag)) {
-      //   const err = new Error('The `tags` array contains an invalid `id`');
-      //   err.status = 400;
-      //   return Promise.reject(err);
     });
 }
 

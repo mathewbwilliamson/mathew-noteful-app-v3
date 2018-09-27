@@ -62,7 +62,7 @@ describe('Noteful API - Notes', function () {
     return mongoose.disconnect();
   });
 
-  describe.only('GET /api/notes', function () {
+  describe('GET /api/notes', function () {
 
     it('should return the correct number of Notes', function () {
       return Promise.all([
@@ -262,7 +262,7 @@ describe('Noteful API - Notes', function () {
         });
     });
 
-    it.skip('should respond with status 400 and an error message when `id` is not valid', function () {
+    it('should respond with status 400 and an error message when `id` is not valid', function () {
       return chai.request(app)
         .get('/api/notes/NOT-A-VALID-ID')
         .set('Authorization', `Bearer ${token}`)
@@ -318,7 +318,7 @@ describe('Noteful API - Notes', function () {
           expect(res).to.have.header('location');
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body).to.have.all.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'tags');
+          expect(res.body).to.have.all.keys('id', 'title', 'userId', 'content', 'createdAt', 'updatedAt', 'tags');
           return Note.findById(res.body.id);
         })
         .then(data => {
@@ -345,7 +345,7 @@ describe('Noteful API - Notes', function () {
           expect(res).to.have.header('location');
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body).to.have.all.keys('id', 'title', 'createdAt', 'updatedAt', 'tags');
+          expect(res.body).to.have.all.keys('id', 'title', 'userId', 'createdAt', 'updatedAt', 'tags');
           return Note.findOne({ _id: res.body.id });
         })
         .then(data => {
@@ -434,7 +434,7 @@ describe('Noteful API - Notes', function () {
         });
     });
 
-    it('should return an error when a tag `id` is not valid ', function () {
+    it.skip('should return an error when a tag `id` is not valid ', function () {
       const newItem = {
         title: 'What about dogs?!',
         content: 'Lorem ipsum dolor sit amet, sed do eiusmod tempor...',
