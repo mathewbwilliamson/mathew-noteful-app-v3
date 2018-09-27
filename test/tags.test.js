@@ -398,7 +398,7 @@ describe('Noteful API - Tags', function () {
 
   });
 
-  describe.only('DELETE /api/tags/:id', function () {
+  describe('DELETE /api/tags/:id', function () {
 
     it('should delete an existing tag and respond with 204', function () {
       let data;
