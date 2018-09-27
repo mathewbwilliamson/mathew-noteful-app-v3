@@ -110,7 +110,7 @@ describe('Noteful API - Users', function () {
         });
     });
 
-    it.only('Should reject users with a missing password', function() {
+    it('Should reject users with a missing password', function() {
       const newUser = { 
         username: 'username', 
         fullname:'full name' 
@@ -130,22 +130,40 @@ describe('Noteful API - Users', function () {
 
     it('Should reject users with non-string username', function () {
       const newUser = { 
-        username: 'thisisanewuser', 
+        username: 4147376476635, 
         password: 'password', 
         fullname:'full name' 
       };
       let body;
-      return '';
+      return chai.request(app)
+        .post('/api/users/')
+        .set('Authorization', `Bearer ${token}`)
+        .send(newUser)
+        .then(res => {
+          expect(res).to.have.status(422);
+          expect(res).to.be.json;
+          expect(res.body).to.be.a('object');
+          expect(res.body).to.have.all.keys('code', 'reason', 'message', 'location');
+        });
     });
 
     it('Should reject users with non-string password', function () {
       const newUser = { 
-        username: 'thisisanewuser', 
-        password: 'password', 
+        username: 'username', 
+        password: 342423424, 
         fullname:'full name' 
       };
       let body;
-      return '';
+      return chai.request(app)
+        .post('/api/users/')
+        .set('Authorization', `Bearer ${token}`)
+        .send(newUser)
+        .then(res => {
+          expect(res).to.have.status(422);
+          expect(res).to.be.json;
+          expect(res.body).to.be.a('object');
+          expect(res.body).to.have.all.keys('code', 'reason', 'message', 'location');
+        });
     });
 
     it('Should reject users with non-string first name', function () {
