@@ -178,8 +178,8 @@ describe('Noteful API - Folders', function () {
   });
 
   describe('POST /api/folders', function () {
-
-    it.only('should create and return a new item when provided valid data', function () {
+//TODO: Stopped here!!
+    it('should create and return a new item when provided valid data', function () {
       const newItem = { name: 'newFolder' };
       let body;
       return chai.request(app)
@@ -196,6 +196,7 @@ describe('Noteful API - Folders', function () {
           return Folder.findById(body.id);
         })
         .then(data => {
+          console.log('Data is ', data)
           expect(body.id).to.equal(data.id);
           expect(body.name).to.equal(data.name);
           expect(new Date(body.createdAt)).to.deep.equal(data.createdAt);
