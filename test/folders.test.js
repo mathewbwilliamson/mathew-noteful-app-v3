@@ -275,15 +275,15 @@ describe('Noteful API - Folders', function () {
         .then(_data => {
           data = _data;
           return chai.request(app)
-            .set('Authorization', `Bearer ${token}`)
             .put(`/api/folders/${data.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateItem);
         })
         .then(function (res) {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt');
+          expect(res.body).to.have.all.keys('id', 'name', 'createdAt', 'userId', 'updatedAt');
           expect(res.body.id).to.equal(data.id);
           expect(res.body.name).to.equal(updateItem.name);
           expect(new Date(res.body.createdAt)).to.deep.equal(data.createdAt);
@@ -295,8 +295,8 @@ describe('Noteful API - Folders', function () {
     it('should respond with a 400 for an invalid id', function () {
       const updateItem = { name: 'Blah' };
       return chai.request(app)
-        .set('Authorization', `Bearer ${token}`)
         .put('/api/folders/NOT-A-VALID-ID')
+        .set('Authorization', `Bearer ${token}`)
         .send(updateItem)
         .then(res => {
           expect(res).to.have.status(400);
@@ -308,8 +308,8 @@ describe('Noteful API - Folders', function () {
       const updateItem = { name: 'Blah' };
       // The string "DOESNOTEXIST" is 12 bytes which is a valid Mongo ObjectId
       return chai.request(app)
-        .set('Authorization', `Bearer ${token}`)
         .put('/api/folders/DOESNOTEXIST')
+        .set('Authorization', `Bearer ${token}`)
         .send(updateItem)
         .then(res => {
           expect(res).to.have.status(404);
@@ -323,8 +323,8 @@ describe('Noteful API - Folders', function () {
         .then(_data => {
           data = _data;
           return chai.request(app)
-            .set('Authorization', `Bearer ${token}`)
             .put(`/api/folders/${data.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateItem);
         })
         .then(res => {
@@ -342,8 +342,8 @@ describe('Noteful API - Folders', function () {
         .then(_data => {
           data = _data;
           return chai.request(app)
-            .set('Authorization', `Bearer ${token}`)
             .put(`/api/folders/${data.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateItem);
         })
         .then(res => {
@@ -360,8 +360,8 @@ describe('Noteful API - Folders', function () {
           const [item1, item2] = results;
           item1.name = item2.name;
           return chai.request(app)
-            .set('Authorization', `Bearer ${token}`)
             .put(`/api/folders/${item1.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(item1);
         })
         .then(res => {
@@ -381,8 +381,8 @@ describe('Noteful API - Folders', function () {
         .then(_data => {
           data = _data;
           return chai.request(app)
-            .set('Authorization', `Bearer ${token}`)
             .put(`/api/folders/${data.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateItem);
         })
         .then(res => {
@@ -395,7 +395,7 @@ describe('Noteful API - Folders', function () {
 
   });
 
-  describe('DELETE /api/folders/:id', function () {
+  describe.only('DELETE /api/folders/:id', function () {
 
     it('should delete an existing folder and respond with 204', function () {
       let data;
