@@ -288,7 +288,7 @@ describe('Noteful API - Tags', function () {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt');
+          expect(res.body).to.have.all.keys('id', 'name', 'userId', 'createdAt', 'updatedAt');
           expect(res.body.id).to.equal(data.id);
           expect(res.body.name).to.equal(updateItem.name);
           expect(new Date(res.body.createdAt)).to.deep.equal(data.createdAt);
@@ -398,7 +398,7 @@ describe('Noteful API - Tags', function () {
 
   });
 
-  describe('DELETE /api/tags/:id', function () {
+  describe.only('DELETE /api/tags/:id', function () {
 
     it('should delete an existing tag and respond with 204', function () {
       let data;
