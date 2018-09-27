@@ -5,16 +5,23 @@ const chaiHttp = require('chai-http');
 const mongoose = require('mongoose');
 const express = require('express');
 const sinon = require('sinon');
+const jwt = require('jsonwebtoken');
 
 const app = require('../server');
-const Tag = require('../models/tag');
+const Folder = require('../models/folder');
 const Note = require('../models/note');
-const { notes, folders, tags } = require('../db/data');
+const Tag = require('../models/tag');
+const User = require('../models/user');
+
+const { notes, folders, tags, users } = require('../db/data');
 const { TEST_MONGODB_URI } = require('../config');
+const { JWT_SECRET } = require('../config');
 
 chai.use(chaiHttp);
 const expect = chai.expect;
 const sandbox = sinon.createSandbox();
+let token = '';
+let user = '';
 
 describe('Noteful API - Tags', function () {
 
@@ -22,22 +29,33 @@ describe('Noteful API - Tags', function () {
     return mongoose.connect(TEST_MONGODB_URI, { useNewUrlParser: true })
       .then(() => Promise.all([
         Note.deleteMany(),
+        Folder.deleteMany(),
         Tag.deleteMany(),
+        User.deleteMany()
       ]));
   });
 
   beforeEach(function () {
     return Promise.all([
-      Tag.insertMany(tags),
-      Note.insertMany(notes)
-    ]);
+      User.insertMany(users),
+      Folder.insertMany(folders),
+      Note.insertMany(notes),
+      Tag.insertMany(tags)
+      // Folder.createIndexes(),
+    ])
+      .then( ([users]) => {
+        user = users[0];
+        token = jwt.sign( {user}, JWT_SECRET, { subject: user.username });
+      });
   });
 
   afterEach(function () {
     sandbox.restore();
     return Promise.all([
-      Note.deleteMany(),
+      Note.deleteMany(), 
+      Folder.deleteMany(),
       Tag.deleteMany(),
+      User.deleteMany()
     ]);
   });
 
@@ -49,8 +67,10 @@ describe('Noteful API - Tags', function () {
 
     it('should return the correct number of tags', function () {
       return Promise.all([
-        Tag.find(),
-        chai.request(app).get('/api/tags')
+        Tag.find({ userId: user.id }),
+        chai.request(app)
+          .get('/api/tags')
+          .set('Authorization', `Bearer ${token}`)
       ])
         .then(([data, res]) => {
           expect(res).to.have.status(200);
@@ -62,8 +82,10 @@ describe('Noteful API - Tags', function () {
 
     it('should return a list sorted by name with the correct fields and values', function () {
       return Promise.all([
-        Tag.find().sort('name'),
-        chai.request(app).get('/api/tags')
+        Tag.find({ userId: user.id }).sort('name'),
+        chai.request(app)
+          .get('/api/tags')
+          .set('Authorization', `Bearer ${token}`)
       ])
         .then(([data, res]) => {
           expect(res).to.have.status(200);
@@ -72,7 +94,7 @@ describe('Noteful API - Tags', function () {
           expect(res.body).to.have.length(data.length);
           res.body.forEach(function (item, i) {
             expect(item).to.be.a('object');
-            expect(item).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt');
+            expect(item).to.have.all.keys('id', 'name', 'createdAt', 'userId', 'updatedAt');
             expect(item.id).to.equal(data[i].id);
             expect(item.name).to.equal(data[i].name);
             expect(new Date(item.createdAt)).to.deep.equal(data[i].createdAt);
@@ -84,7 +106,9 @@ describe('Noteful API - Tags', function () {
     it('should catch errors and respond properly', function () {
       sandbox.stub(Tag.schema.options.toObject, 'transform').throws('FakeError');
 
-      return chai.request(app).get('/api/tags')
+      return chai.request(app)
+        .get('/api/tags')
+        .set('Authorization', `Bearer ${token}`)
         .then(res => {
           expect(res).to.have.status(500);
           expect(res).to.be.json;
