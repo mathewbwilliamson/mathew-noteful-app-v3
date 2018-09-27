@@ -178,7 +178,6 @@ describe('Noteful API - Folders', function () {
   });
 
   describe('POST /api/folders', function () {
-//TODO: Stopped here!!
     it('should create and return a new item when provided valid data', function () {
       const newItem = { name: 'newFolder' };
       let body;
@@ -207,8 +206,8 @@ describe('Noteful API - Folders', function () {
     it('should return an error when missing "name" field', function () {
       const newItem = {};
       return chai.request(app)
-        .set('Authorization', `Bearer ${token}`)
         .post('/api/folders')
+        .set('Authorization', `Bearer ${token}`)
         .send(newItem)
         .then(res => {
           expect(res).to.have.status(400);
@@ -221,8 +220,8 @@ describe('Noteful API - Folders', function () {
     it('should return an error when "name" field is empty string', function () {
       const newItem = { name: '' };
       return chai.request(app)
-        .set('Authorization', `Bearer ${token}`)
         .post('/api/folders')
+        .set('Authorization', `Bearer ${token}`)
         .send(newItem)
         .then(res => {
           expect(res).to.have.status(400);
@@ -237,8 +236,8 @@ describe('Noteful API - Folders', function () {
         .then(data => {
           const newItem = { name: data.name };
           return chai.request(app)
-            .set('Authorization', `Bearer ${token}`)
             .post('/api/folders')
+            .set('Authorization', `Bearer ${token}`)
             .send(newItem);
         })
         .then(res => {
@@ -254,8 +253,8 @@ describe('Noteful API - Folders', function () {
 
       const newItem = { name: 'newFolder' };
       return chai.request(app)
-        .set('Authorization', `Bearer ${token}`)
         .post('/api/folders')
+        .set('Authorization', `Bearer ${token}`)
         .send(newItem)
         .then(res => {
           expect(res).to.have.status(500);

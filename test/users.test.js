@@ -76,7 +76,7 @@ describe('Noteful API - Users', function () {
     return mongoose.disconnect();
   });
 
-  describe.only('POST /api/users', function () {
+  describe('POST /api/users', function () {
     it('should create and return a new user when provided valid data', function () {
       const newUser = { 
         username: 'newuser',
