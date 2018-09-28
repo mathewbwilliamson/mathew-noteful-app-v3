@@ -43,17 +43,13 @@ function validateTags( tags, userId ) {
     return Promise.reject(err);
   }
 
-  // tags.forEach(tag => {
-  //   console.log('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
-  //   console.log(tag)
-  //   if (!mongoose.Types.ObjectId.isValid(tag)) {
-  //     console.log('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB')
-  //     console.log(tag)
-  //     const err = new Error('The `tagId` is not valid');
-  //     err.status = 400;
-  //     return Promise.reject(err);
-  //   }
-  // })
+  for (let tag of tags) {
+    if (!mongoose.Types.ObjectId.isValid(tag)) {
+      const err = new Error('The `tagId` is not valid');
+      err.status = 400;
+      return Promise.reject(err);
+    }
+  }
 
   return Tag.find({ $and: [{ _id: { $in: tags }, userId }] })
     .then( matches => {
@@ -144,7 +140,7 @@ router.post('/', (req, res, next) => {
     validateTags( tags, userId)
   ])
     .then( () => {
-      return Note.create(newNote) 
+      return Note.create(newNote);
     })
     .then(result => {
       res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
