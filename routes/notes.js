@@ -45,7 +45,7 @@ function validateTags( tags, userId ) {
 
   for (let tag of tags) {
     if (!mongoose.Types.ObjectId.isValid(tag)) {
-      const err = new Error('The `tagId` is not valid');
+      const err = new Error('The `tags` array contains an invalid `id`');
       err.status = 400;
       return Promise.reject(err);
     }
